@@ -30,9 +30,11 @@ nginx (всю цепочку), через которые прошел запро
 docker-compose.yml
 ```bash
 networks: 
-proxy_net: 
-ipam: 
-config: - subnet: 172.20.0.0/16 
+  proxy_net: 
+    ipam: 
+      config:
+        - subnet: 172.20.0.0/16
+
 services: 
 # Наше приложение (эхо-сервер, выводящий заголовки) 
 app: 
