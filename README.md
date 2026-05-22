@@ -36,13 +36,13 @@ networks:
         - subnet: 172.20.0.0/16
 
 services: 
-# Наше приложение (эхо-сервер, выводящий заголовки) 
-app: 
-image: mendhak/http-https-echo:3.5 
-container_name: app_server 
-networks: 
-proxy_net: 
-ipv4_address: 172.20.0.10 
+  # Наше приложение (эхо-сервер, выводящий заголовки) 
+  app: 
+    image: mendhak/http-https-echo:3.5 
+    container_name: app_server 
+  networks: 
+    proxy_net: 
+      ipv4_address: 172.20.0.10 
  
   # Первый прокси-сервер 
   nginx1: 
