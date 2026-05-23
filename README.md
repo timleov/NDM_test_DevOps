@@ -1,16 +1,16 @@
 # ЗАДАЧА
 
-Есть несколько (N) nginx в режиме обратного прокси (proxy_pass). За ними приложение, отвечающее по HTTP.  
+Есть несколько (N) nginx в режиме обратного прокси (**_proxy_pass_**). За ними приложение, отвечающее по HTTP.  
 #### Важно! Запрос от пользователя может прийти на любой из nginx.  
 Запрос от пользователя может пройти как через один nginх, так и по цепочке через несколько nginx.
 
 Примеры:  
-пользователь > nginx1 > приложение;  
-пользователь > nginx2 > приложение;  
-...  
-пользователь > nginxN > приложение;  
-пользователь > nginx1 > nginx2 > nginxN > приложение;  
-пользователь > nginx2 > nginxN > приложение.  
+_пользователь > nginx1 > приложение;_  
+_пользователь > nginx2 > приложение;_  
+_..._  
+_пользователь > nginxN > приложение;_  
+_пользователь > nginx1 > nginx2 > nginxN > приложение;_  
+_пользователь > nginx2 > nginxN > приложение_.  
 
 Приложение проверяет заголовок X-Forwarded-For. 
 * Требуется, чтобы приложение в заголовке получило IP адрес пользователя и всех nginx (всю цепочку), через которые прошел запрос. 
@@ -77,3 +77,50 @@ services:
 ```
 
 #### nginx.conf
+```bash
+events { worker_connections 1024; }
+
+http {
+    # Доверяем всей подсети наших Nginx/Docker
+    set_real_ip_from  172.20.0.0/16;
+    # Ищем реальный IP в X-Forwarded-For, если пришли из доверенной сети 
+    real_ip_header    X-Forwarded-For; 
+    # Инструктируем Nginx не доверять внешним (пользовательским) 
+X-Forwarded-For 
+    real_ip_recursive on; 
+ 
+    # upstream для динамического определения, куда слать запрос 
+    upstream backend { 
+        server app:80; 
+    } 
+ 
+    server { 
+        listen 80; 
+ 
+        # Роутинг для теста цепочек: /proxy2 шлет на nginx2, 
+/proxy3 на nginx3, /app на приложение 
+        location /proxy2 { 
+            proxy_pass http://172.20.0; 
+            proxy_set_header X-Forwarded-For 
+$proxy_add_x_forwarded_for; 
+        } 
+ 
+        location /proxy3 { 
+            proxy_pass http://172.20.0; 
+            proxy_set_header X-Forwarded-For 
+$proxy_add_x_forwarded_for; 
+        } 
+ 
+        location /app { 
+            proxy_pass http://172.20.0; 
+            proxy_set_header X-Forwarded-For 
+$proxy_add_x_forwarded_for; 
+        } 
+    } 
+}
+```
+
+## 2. Запуск стенда 
+Выполните команду в терминале для сборки и запуска контейнеров: 
+ 
+docker-compose up -d
