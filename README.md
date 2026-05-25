@@ -136,5 +136,7 @@ curl -s http://localhost:8081/app | grep -i "x-forwarded-for"
 ```
 
 Ожидаемый результат:  
+
 ` "x-forwarded-for": "172.20.0.1" `  
+
 (В приложение передается только IP пользователя)  
