@@ -134,7 +134,9 @@ docker-compose up -d
 curl -s http://localhost:8081/app | grep -i "x-forwarded-for"
 ```  
 Ожидаемый результат:  
-` "x-forwarded-for": "172.20.0.1" `  
+```bash
+"x-forwarded-for": "172.20.0.1"
+```  
 (в приложение передается только IP пользователя)  
 
 ### Тест 2: Запрос по цепочке (Пользователь -> Nginx1 -> Nginx2 -> Nginx3 -> Приложение)  
