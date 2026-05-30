@@ -24,56 +24,56 @@ _пользователь > nginx2 > nginxN > приложение_.
 Создаём пустую директорию и размещаем в ней следующие три файла.
 #### docker-compose.yml
 ```bash
-networks: 
-  proxy_net: 
-    ipam: 
+networks:
+  proxy_net:
+    ipam:
       config:
-        - subnet: 172.20.0.0/16
+        - subnet: 172.25.0.0/16
 
-services: 
-  # Наше приложение (эхо-сервер, выводящий заголовки) 
-  app: 
-    image: mendhak/http-https-echo:3.5 
-    container_name: app_server 
-  networks: 
-    proxy_net: 
-      ipv4_address: 172.20.0.10 
- 
-  # Первый прокси-сервер 
-  nginx1: 
-    image: nginx:1.25-alpine 
-    container_name: nginx1 
-    volumes: 
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro 
-    ports: 
-      - "8081:80" 
-    networks: 
-      proxy_net: 
-        ipv4_address: 172.20.0.1 
- 
-  # Второй прокси-сервер 
-  nginx2: 
-    image: nginx:1.25-alpine 
-    container_name: nginx2 
-    volumes: 
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro 
-    ports: 
-      - "8082:80" 
-    networks: 
-      proxy_net: 
-        ipv4_address: 172.20.0.2 
- 
-  # Третий прокси-сервер 
-  nginx3: 
-    image: nginx:1.25-alpine 
-    container_name: nginx3 
-    volumes: 
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro 
-    ports: 
-      - "8083:80" 
-    networks: 
-      proxy_net: 
-        ipv4_address: 172.20.0.3
+services:
+  # Наше приложение (эхо-сервер, выводящий заголовки)
+  app:
+    image: mendhak/http-https-echo:31
+    container_name: app_server
+    networks:
+      proxy_net:
+        ipv4_address: 172.25.0.10
+
+  # Первый прокси-сервер
+  nginx1:
+    image: nginx:1.25-alpine
+    container_name: nginx1
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8081:80"
+    networks:
+      proxy_net:
+        ipv4_address: 172.25.0.1
+
+  # Второй прокси-сервер
+  nginx2:
+    image: nginx:1.25-alpine
+    container_name: nginx2
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8082:80"
+    networks:
+      proxy_net:
+        ipv4_address: 172.25.0.2
+
+  # Третий прокси-сервер
+  nginx3:
+    image: nginx:1.25-alpine
+    container_name: nginx3
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8083:80"
+    networks:
+      proxy_net:
+        ipv4_address: 172.25.0.3
 ```
 
 #### nginx.conf
