@@ -49,7 +49,7 @@ services:
       - "8081:80"
     networks:
       proxy_net:
-        ipv4_address: 172.25.0.1
+        ipv4_address: 172.25.0.2
 
   # Второй прокси-сервер
   nginx2:
@@ -61,7 +61,7 @@ services:
       - "8082:80"
     networks:
       proxy_net:
-        ipv4_address: 172.25.0.2
+        ipv4_address: 172.25.0.3
 
   # Третий прокси-сервер
   nginx3:
@@ -73,7 +73,7 @@ services:
       - "8083:80"
     networks:
       proxy_net:
-        ipv4_address: 172.25.0.3
+        ipv4_address: 172.25.0.4
 ```
 
 #### nginx.conf
@@ -82,7 +82,7 @@ events { worker_connections 1024; }
 
 http {
     # Доверяем всей подсети наших Nginx/Docker
-    set_real_ip_from  172.20.0.0/16;
+    set_real_ip_from  172.25.0.0/16;
     # Ищем реальный IP в X-Forwarded-For, если пришли из доверенной сети 
     real_ip_header    X-Forwarded-For; 
     # Инструктируем Nginx не доверять внешним (пользовательским) X-Forwarded-For 
@@ -98,21 +98,21 @@ http {
  
         # Роутинг для теста цепочек: /proxy2 шлет на nginx2, /proxy3 на nginx3, /app на приложение 
         location /proxy2 { 
-            proxy_pass http://172.20.0; 
+            proxy_pass http://172.25.0; 
             proxy_set_header X-Forwarded-For 
-$proxy_add_x_forwarded_for; 
+            $proxy_add_x_forwarded_for; 
         } 
  
         location /proxy3 { 
-            proxy_pass http://172.20.0; 
+            proxy_pass http://172.25.0; 
             proxy_set_header X-Forwarded-For 
-$proxy_add_x_forwarded_for; 
+            $proxy_add_x_forwarded_for; 
         } 
  
         location /app { 
-            proxy_pass http://172.20.0; 
+            proxy_pass http://172.25.0; 
             proxy_set_header X-Forwarded-For 
-$proxy_add_x_forwarded_for; 
+            $proxy_add_x_forwarded_for; 
         } 
     } 
 }
@@ -126,7 +126,7 @@ docker-compose up -d
 
 ## 3. Протокол тестирования (с помощью curl) 
 Для выполнения тестов мы будем использовать curl и фильтровать вывод утилитой grep, чтобы видеть только заголовок x-forwarded-for, пришедший в приложение. 
-Примечание: IP-адрес 172.20.0.x в начале строки — это ваш IP в подсети Docker (обычно 172.20.0.1, если вы делаете запрос с хост-машины).
+Примечание: IP-адрес 172.25.0.x в начале строки — это ваш IP в подсети Docker (обычно 172.25.0.1, если вы делаете запрос с хост-машины).
 
 ### Тест 1: Прямой запрос через один Nginx (Пользователь -> Nginx1 -> Приложение)  
 Запрос отправляется на порт 8081 (nginx1) в эндпоинт /app.  
@@ -135,7 +135,7 @@ curl -s http://localhost:8081/app | grep -i "x-forwarded-for"
 ```  
 Ожидаемый результат:  
 ```bash
-"x-forwarded-for": "172.20.0.1"
+"x-forwarded-for": "172.25.0.1"
 ```  
 (в приложение передается только IP пользователя)  
 
@@ -147,7 +147,7 @@ curl -s http://localhost:8081/proxy2 | grep -i "x-forwarded-for"
 ```  
 Ожидаемый результат:  
 ```bash
-"x-forwarded-for": "172.20.0.1, 172.20.0.1, 172.20.0.2"
+"x-forwarded-for": "172.25.0.1, 172.25.0.1, 172.25.0.2"
 ```  
 (цепочка зафиксирована: реальный ip пользователя -> ip Nginx1 -> ip Nginx2)  
 
@@ -158,7 +158,7 @@ curl -s -H "X-Forwarded-For: 9.9.9.9" http://localhost:8081/app | grep -i "x-for
 ```
 Ожидаемый результат:  
 ```bash
-"x-forwarded-for": "172.20.0.1"
+"x-forwarded-for": "172.25.0.1"
 ```  
 (фейковый IP 9.9.9.9 полностью удален, так как Nginx не доверяет внешнему источнику. В приложение ушел только честный IP пользователя)  
 
@@ -169,6 +169,6 @@ curl -s -H "X-Forwarded-For: 9.9.9.9" http://localhost:8081/proxy2 | grep -i "x-
 ```  
 Ожидаемый результат:  
 ```bash
-"x-forwarded-for": "172.20.0.1, 172.20.0.1, 172.20.0.2"
+"x-forwarded-for": "172.25.0.1, 172.25.0.1, 172.25.0.2"
 ```  
 (фейковый IP 9.9.9.9 успешно отброшен на первом же Nginx. Вся последующая внутренняя цепочка построена корректно и безопасно)  
