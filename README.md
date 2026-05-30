@@ -98,19 +98,19 @@ http {
  
         # Роутинг для теста цепочек: /proxy2 шлет на nginx2, /proxy3 на nginx3, /app на приложение 
         location /proxy2 { 
-            proxy_pass http://172.25.0; 
+            proxy_pass http://172.25.0.3; 
             proxy_set_header X-Forwarded-For 
             $proxy_add_x_forwarded_for; 
         } 
  
         location /proxy3 { 
-            proxy_pass http://172.25.0; 
+            proxy_pass http://172.25.0.4; 
             proxy_set_header X-Forwarded-For 
             $proxy_add_x_forwarded_for; 
         } 
  
         location /app { 
-            proxy_pass http://172.25.0; 
+            proxy_pass http://172.25.0.10:8080; 
             proxy_set_header X-Forwarded-For 
             $proxy_add_x_forwarded_for; 
         } 
