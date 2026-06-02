@@ -180,46 +180,46 @@ docker-compose up -d
 Примечание: IP-адрес 172.25.0.x в начале строки — это ваш IP в подсети Docker (обычно 172.25.0.1, если вы делаете запрос с хост-машины).
 
 ### Тест 1: Прямой запрос через один Nginx (Пользователь -> Nginx1 -> Приложение)  
-Запрос отправляется на порт 8081 (nginx1) в эндпоинт /app.  
+Запрос отправляется на порт 8081 (nginx1) в эндпоинт '/app/'.  
 ```bash
-curl -s http://localhost:8081/app | grep -i "x-forwarded-for"
+curl -s http://localhost:8081/app/ | grep -i "x-forwarded-for"
 ```  
 Ожидаемый результат:  
 ```bash
-"x-forwarded-for": "172.25.0.1"
+"x-forwarded-for": "172.25.0.1",
 ```  
 (в приложение передается только IP пользователя)  
 
 ### Тест 2: Запрос по цепочке (Пользователь -> Nginx1 -> Nginx2 -> Nginx3 -> Приложение)  
-Запрос отправляется на порт 8081 (nginx1) в эндпоинт /proxy2. Согласно конфигу, Nginx1 
+Запрос отправляется на порт 8081 (nginx1) в эндпоинт '/proxy2/'. Согласно конфигу, Nginx1 
 перенаправит его на Nginx2, тот на Nginx3, а Nginx3 — в приложение.  
 ```bash
-curl -s http://localhost:8081/proxy2 | grep -i "x-forwarded-for"
+curl -s http://localhost:8081/proxy2/ | grep -i "x-forwarded-for"
 ```  
 Ожидаемый результат:  
 ```bash
-"x-forwarded-for": "172.25.0.1, 172.25.0.1, 172.25.0.2"
+"x-forwarded-for": "172.25.0.1, 172.25.0.2, 172.25.0.3",
 ```  
 (цепочка зафиксирована: реальный ip пользователя -> ip Nginx1 -> ip Nginx2)  
 
 ### Тест 3: Защита от подмены заголовка злоумышленником (один Nginx)  
 Пользователь пытается передать фейковый IP 9.9.9.9 через заголовок X-Forwarded-For на nginx1.  
 ```bash
-curl -s -H "X-Forwarded-For: 9.9.9.9" http://localhost:8081/app | grep -i "x-forwarded-for"
+curl -s -H "X-Forwarded-For: 9.9.9.9" http://localhost:8081/app/ | grep -i "x-forwarded-for"
 ```
 Ожидаемый результат:  
 ```bash
-"x-forwarded-for": "172.25.0.1"
+"x-forwarded-for": "172.25.0.1",
 ```  
 (фейковый IP 9.9.9.9 полностью удален, так как Nginx не доверяет внешнему источнику. В приложение ушел только честный IP пользователя)  
 
 ### Тест 4: Защита от подмены заголовка злоумышленником при работе в цепочке  
 Пользователь передает фейковый IP 9.9.9.9 в цепочку из трех Nginx.  
 ```bash
-curl -s -H "X-Forwarded-For: 9.9.9.9" http://localhost:8081/proxy2 | grep -i "x-forwarded-for" 
+curl -s -H "X-Forwarded-For: 9.9.9.9" http://localhost:8081/proxy2/ | grep -i "x-forwarded-for" 
 ```  
 Ожидаемый результат:  
 ```bash
-"x-forwarded-for": "172.25.0.1, 172.25.0.1, 172.25.0.2"
+"x-forwarded-for": "172.25.0.1, 172.25.0.2, 172.25.0.3",
 ```  
 (фейковый IP 9.9.9.9 успешно отброшен на первом же Nginx. Вся последующая внутренняя цепочка построена корректно и безопасно)  
