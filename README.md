@@ -21,101 +21,62 @@ _пользователь > nginx2 > nginxN > приложение_.
 # РЕШЕНИЕ
 
 ## 1. Файлы тестового стенда
-Создаём пустую директорию и размещаем в ней следующие три файла.
+Создаём пустую директорию и размещаем в ней следующие четыре (4) файла.
 #### docker-compose.yml
 ```bash
-networks:
-  proxy_net:
-    ipam:
-      config:
-        - subnet: 172.25.0.0/16
-
 services:
-  # Наше приложение (эхо-сервер, выводящий заголовки)
   app:
     image: mendhak/http-https-echo:31
     container_name: app_server
+    environment:
+      - HTTP_PORT=80
     networks:
       proxy_net:
         ipv4_address: 172.25.0.10
 
-  # Первый прокси-сервер
   nginx1:
     image: nginx:1.25-alpine
     container_name: nginx1
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx1.conf:/etc/nginx/nginx.conf:ro
     ports:
       - "8081:80"
     networks:
       proxy_net:
         ipv4_address: 172.25.0.2
 
-  # Второй прокси-сервер
   nginx2:
     image: nginx:1.25-alpine
     container_name: nginx2
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx2.conf:/etc/nginx/nginx.conf:ro
     ports:
       - "8082:80"
     networks:
       proxy_net:
         ipv4_address: 172.25.0.3
 
-  # Третий прокси-сервер
   nginx3:
     image: nginx:1.25-alpine
     container_name: nginx3
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx3.conf:/etc/nginx/nginx.conf:ro
     ports:
       - "8083:80"
     networks:
       proxy_net:
         ipv4_address: 172.25.0.4
+
+networks:
+  proxy_net:
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
 ```
 
 #### nginx.conf
 ```bash
-events { worker_connections 1024; }
 
-http {
-    # Доверяем всей подсети наших Nginx/Docker
-    set_real_ip_from  172.25.0.0/16;
-    # Ищем реальный IP в X-Forwarded-For, если пришли из доверенной сети 
-    real_ip_header    X-Forwarded-For; 
-    # Инструктируем Nginx не доверять внешним (пользовательским) X-Forwarded-For 
-    real_ip_recursive on; 
- 
-    # upstream для динамического определения, куда слать запрос 
-    upstream backend { 
-        server app:80; 
-    } 
- 
-    server { 
-        listen 80; 
- 
-        # Роутинг для теста цепочек: /proxy2 шлет на nginx2, /proxy3 на nginx3, /app на приложение 
-        location /proxy2 { 
-            proxy_pass http://172.25.0.3; 
-            proxy_set_header X-Forwarded-For 
-            $proxy_add_x_forwarded_for; 
-        } 
- 
-        location /proxy3 { 
-            proxy_pass http://172.25.0.4; 
-            proxy_set_header X-Forwarded-For 
-            $proxy_add_x_forwarded_for; 
-        } 
- 
-        location /app { 
-            proxy_pass http://172.25.0.10:8080; 
-            proxy_set_header X-Forwarded-For 
-            $proxy_add_x_forwarded_for; 
-        } 
-    } 
-}
 ```
 
 ## 2. Запуск стенда 
